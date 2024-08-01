@@ -1,101 +1,98 @@
-name = 'GetErrorInfo'
-teg = 'GetErrorInfo_bot'
-token = '7198556498:AAFikKiDB8ncUUkWkz4kwAbpEkkzMSw4Ne4'
+import telebot
+from telebot import types
+import data
 
 
-start_text = ('Бот предназначен для получения данных о возможных ошибках и способах их решения\n'
-              'Используйте команду /help для получения информации о работе бота')
-help_text = ("Вот список команд бота:\n"
-             "/get - начинает процесс поиска решения ошибки\n"
-             "/help - выводит это сообщение\n"
-             "/start - выводит стартовое сообщение и позволяет получить информацию об ошибках\n"
-             "/reboot - обнуляет все процессы, вместе с файлом лога\n")
-hack_try = "Для получения информации об ошибке необходимо применить команду /start нажать на соответствующую кнопку"
+bot = telebot.TeleBot(data.token)
+level = 0
+search_error = ""
 
 
-errors_1 = list()
-errors_1.append("GameCore")
-errors_1.append("Видео")
-errors_1.append("Страница управления")
-errors_1.append("Сервер")
-errors_1.append("GUI")
-errors_1.append("Дроны")
+@bot.message_handler(commands=['start'])
+def my_start(message):
+    write_text(message, data.start_text)
 
-errors_2 = dict()
-errors_2["GameCore"] = ["Нет доступа к ядру"]
-errors_2["Видео"] = ["Не подключается видео", "Не работают камеры тренера"]
-errors_2["Страница управления"] = ["При переходе на страницу управления выпадает ошибка 404",
-                                   "При переходе на страницу управления выпадает ошибка 50х"]
-errors_2["Сервер"] = ["Не удается получить доступ к сайту (превышено время ожидания)",
-                      "Не работает DHCP или сломался интернет"]
-errors_2["GUI"] = ["Зависло"]
-errors_2["Дроны"] = ["Не взлетает"]
 
-errors_3 = dict()
-errors_3["Не подключается видео"] = ["В консоли ошибка peer id … not found",
-                                     "В консоли нет ошибки peer id … not found, есть ответы"]
-errors_3["Не взлетает"] = ["На плате оптики нет камеры", "На плате оптики есть камера"]
+@bot.message_handler(commands=['get'])
+def my_get(message):
+    build_keyboard(message, data.errors_1)
 
-errors_text = dict()
 
-# Ошибка "GameCore"
-errors_text["GameCore"] = ("next step", 0)
-errors_text["Нет доступа к ядру"] = (
-                        "- Проверить, запущен ли GameCore.\n"
-                        "- Если запущен, но все равно написано, что нет доступа к ядру, проверьте, "
-                        "что в config.py (из geoscan_arena_control) правильно указан адрес GameCore.\n", 1)
+@bot.message_handler(commands=['help'])
+def my_help(message):
+    write_text(message, data.help_text)
 
-# Ошибка "Видео"
-errors_text["Видео"] = ("Next step:", 0)
-errors_text["Не подключается видео"] = (
-                        "- Открыть консоль в браузере\n", 0)
-errors_text["В консоли ошибка peer id … not found"] = (
-                        "- Проверить, запущен ли на стойке вебсокет сервер для webrtc\n"
-                        "- Если запущен, то возможно дрон/робот отключен\n"
-                        "- Перезапустить вебсокет сервер на стойке\n"
-                        "- Проверить работоспособность точки доступа\n", 1)
-errors_text["В консоли нет ошибки peer id … not found, есть ответы"] = (
-                        "- Попробовать подключиться через другой браузер (можно использовать Chrome, Yandex и\n"
-                        "другие браузеры на движке chromium (но точно работает только на первых двух)) или\n"
-                        "перезагрузить текущий\n"
-                        "- Возможно умер внешний turn сервер. Придется искать новый и везде его менять (websend.py\n"
-                        "на роботах и video_player.js в gesocan_arena_control)\n", 1)
-errors_text["Не работают камеры тренера"] = ("- На сервере ввести sudo systemctl restart ptz-server.service\n", 1)
 
-# Ошибка "Страница управления"
-errors_text["Страница управления"] = ("Next step:", 0)
-errors_text["При переходе на страницу управления выпадает ошибка 404"] = ("- Проверьте правильность адреса\n", 1)
-errors_text["При переходе на страницу управления выпадает ошибка 50х"] = (
-                        "- Что-то упало (geoscan_arena_control). Нужно поднять\n", 1)
+@bot.message_handler(commands=['reboot'])
+def my_reboot(message):
+    global level, search_error
 
-# Ошибка "Сервер"
-errors_text["Сервер"] = ("Next step:", 0)
-errors_text["Не удается получить доступ к сайту (превышено время ожидания)"] = (
-                        "- Что-то случилось с pfSense (зовите знающего человека)\n", 1)
-errors_text["Не работает DHCP или сломался интернет"] = (
-                        "- Проверить линк на 28 порту и, если никого нет в серверной, то перезагрузить сервер\n", 1)
+    level = 0
+    search_error = ""
+    f = open("log.txt", 'w')
+    f.close()
+    bot.send_message(message.from_user.id, "Поиск ошибки начат заново", reply_markup=types.ReplyKeyboardRemove())
 
-# Ошибка "GUI"
-errors_text["GUI"] = ("Next step:", 0)
-errors_text["Зависло"] = (
-                        "- Убить через диспетчер задач\n"
-                        "- Запустить заново\n"
-                        "- Чтобы не отваливалось во время игры, лучше перезапускать перед каждой игрой\n", 1)
 
-# Ошибка "Дроны"
-errors_text["Дроны"] = ("Next step:", 0)
-errors_text["Не взлетает"] = (
-                        "- Проверить есть ли на плате оптики камера\n", 0)
-errors_text["На плате оптики нет камеры"] = (
-                        "- Заменить дрон\n", 1)
-errors_text["На плате оптики есть камера"] = (
-                        "- Заменить аккумулятор и включить дрон\n", 1)
+@bot.message_handler(content_types=['text'])
+def error_manager(message):
+    global search_error, level
 
-#
-#
-# errors_info["GameCore"] = "Нет доступа к ядру"
-# errors_info["Видео"] = "Не подключается видео"
-# errors_info["Страница управления"] = list()
-# errors_info["Сервер"] = list()
-# errors_info["GUI"] = list()
-# errors_info["Дроны"] = list()
+    try:
+        match level:
+            case 0:
+                if message.text in data.errors_1:
+                    # print('fdjkfredf')
+                    print(data.errors_text[message.text])
+                    write_text(message, data.errors_text[message.text][0])
+                    # print(222)
+                    search_error = message.text
+                    if data.errors_text[message.text][1] == 0:
+                        level += 1
+                        build_keyboard(message, data.errors_2[message.text])
+                    else:
+                        level = 0
+                else:
+                    write_text(message, data.hack_try)
+            case 1:
+                if message.text in data.errors_2[search_error]:
+                    write_text(message, data.errors_text[message.text][0])
+                    search_error = message.text
+                    if data.errors_text[message.text][1] == 0:
+                        level += 1
+                        build_keyboard(message, data.errors_3[message.text])
+                    else:
+                        level = 0
+                else:
+                    write_text(message, data.hack_try)
+            case 2:
+                if message.text in data.errors_3[search_error]:
+                    write_text(message, data.errors_text[message.text][0])
+                    level = 0
+                    search_error = ""
+                else:
+                    write_text(message, data.hack_try)
+    except Exception:
+        text = 'Программа вышла из чата. Просьба призвать богов ИКТ, они помогут'
+        bot.reply_to(message, text)
+
+
+def build_keyboard(message, this_dict):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+
+    for key in this_dict:
+        new_btn = types.KeyboardButton(key)
+        markup.add(new_btn)
+
+    bot.send_message(message.from_user.id, "Надо выбрать что-то из списка:", reply_markup=markup)
+
+
+def write_text(message, string):
+    f = open("log.txt", 'a')
+    f.write(string + '\n')
+    f.close()
+    bot.send_message(message.from_user.id, string, reply_markup=types.ReplyKeyboardRemove())
+
+
+if __name__ == '__main__':
+    bot.polling(none_stop=True)
