@@ -1,7 +1,25 @@
-name = 'GetErrorInfo'
-teg = 'GetErrorInfo_bot'
-token = '7198556498:AAFikKiDB8ncUUkWkz4kwAbpEkkzMSw4Ne4'
+import json
 
+
+def DFS(last, local_dict):
+    global name_digit, digit_name, error_text, errors_list
+
+    pos = 1
+    for key in local_dict:
+        name_digit[key] = BASE * name_digit[last] + pos
+        digit_name[BASE * name_digit[last] + pos] = key
+        error_text[name_digit[key]] = local_dict[key]["text"]
+        if name_digit[last] not in errors_list:
+            errors_list[name_digit[last]] = list()
+        errors_list[name_digit[last]].append(name_digit[key])
+        pos += 1
+        for elem in local_dict[key]["next"]:
+            DFS(key, elem)
+
+
+NAME = 'GetErrorInfo'
+TEG = 'GetErrorInfo_bot'
+token = '7198556498:AAFikKiDB8ncUUkWkz4kwAbpEkkzMSw4Ne4'
 
 start_text = ('Бот предназначен для получения данных о возможных ошибках и способах их решения\n'
               'Используйте команду /help для получения информации о работе бота\n'
@@ -15,89 +33,21 @@ hack_try = "Вы вводите что-то не по протоколу, про
 fatal_text = "Программа вышла из чата. Просьба призвать богов ИКТ, они помогут"
 
 
-errors_1 = list()
-errors_1.append("GameCore")
-errors_1.append("Видео")
-errors_1.append("Страница управления")
-errors_1.append("Сервер")
-errors_1.append("GUI")
-errors_1.append("Дроны")
+BASE = 10
 
-errors_2 = dict()
-errors_2["GameCore"] = ["Нет доступа к ядру"]
-errors_2["Видео"] = ["Не подключается видео", "Не работают камеры тренера"]
-errors_2["Страница управления"] = ["При переходе на страницу управления выпадает ошибка 404",
-                                   "При переходе на страницу управления выпадает ошибка 50х"]
-errors_2["Сервер"] = ["Не удается получить доступ к сайту (превышено время ожидания)",
-                      "Не работает DHCP или сломался интернет"]
-errors_2["GUI"] = ["Зависло"]
-errors_2["Дроны"] = ["Не взлетает"]
+error_text = dict()
 
-errors_3 = dict()
-errors_3["Не подключается видео"] = ["В консоли ошибка peer id … not found",
-                                     "В консоли нет ошибки peer id … not found, есть ответы"]
-errors_3["Не взлетает"] = ["На плате оптики нет камеры", "На плате оптики есть камера"]
+f = open('info.json')
+data = json.load(f)
+f.close()
 
-errors_text = dict()
+name_digit = dict()
+name_digit[0] = 0
+digit_name = dict()
+digit_name[0] = 0
+errors_list = dict()
 
-# Ошибка "GameCore"
-errors_text["GameCore"] = ("Next step:", 0)
-errors_text["Нет доступа к ядру"] = (
-                        "- Проверить, запущен ли GameCore.\n"
-                        "- Если запущен, но все равно написано, что нет доступа к ядру, проверьте, "
-                        "что в config.py (из geoscan_arena_control) правильно указан адрес GameCore.\n", 1)
+DFS(0, data)
 
-# Ошибка "Видео"
-errors_text["Видео"] = ("Next step:", 0)
-errors_text["Не подключается видео"] = (
-                        "- Открыть консоль в браузере\n", 0)
-errors_text["В консоли ошибка peer id … not found"] = (
-                        "- Проверить, запущен ли на стойке вебсокет сервер для webrtc\n"
-                        "- Если запущен, то возможно дрон/робот отключен\n"
-                        "- Перезапустить вебсокет сервер на стойке\n"
-                        "- Проверить работоспособность точки доступа\n", 1)
-errors_text["В консоли нет ошибки peer id … not found, есть ответы"] = (
-                        "- Попробовать подключиться через другой браузер (можно использовать Chrome, Yandex и\n"
-                        "другие браузеры на движке chromium (но точно работает только на первых двух)) или\n"
-                        "перезагрузить текущий\n"
-                        "- Возможно умер внешний turn сервер. Придется искать новый и везде его менять (websend.py\n"
-                        "на роботах и video_player.js в gesocan_arena_control)\n", 1)
-errors_text["Не работают камеры тренера"] = ("- На сервере ввести sudo systemctl restart ptz-server.service\n", 1)
-
-# Ошибка "Страница управления"
-errors_text["Страница управления"] = ("Next step:", 0)
-errors_text["При переходе на страницу управления выпадает ошибка 404"] = ("- Проверьте правильность адреса\n", 1)
-errors_text["При переходе на страницу управления выпадает ошибка 50х"] = (
-                        "- Что-то упало (geoscan_arena_control). Нужно поднять\n", 1)
-
-# Ошибка "Сервер"
-errors_text["Сервер"] = ("Next step:", 0)
-errors_text["Не удается получить доступ к сайту (превышено время ожидания)"] = (
-                        "- Что-то случилось с pfSense (зовите знающего человека)\n", 1)
-errors_text["Не работает DHCP или сломался интернет"] = (
-                        "- Проверить линк на 28 порту и, если никого нет в серверной, то перезагрузить сервер\n", 1)
-
-# Ошибка "GUI"
-errors_text["GUI"] = ("Next step:", 0)
-errors_text["Зависло"] = (
-                        "- Убить через диспетчер задач\n"
-                        "- Запустить заново\n"
-                        "- Чтобы не отваливалось во время игры, лучше перезапускать перед каждой игрой\n", 1)
-
-# Ошибка "Дроны"
-errors_text["Дроны"] = ("Next step:", 0)
-errors_text["Не взлетает"] = (
-                        "- Проверить есть ли на плате оптики камера\n", 0)
-errors_text["На плате оптики нет камеры"] = (
-                        "- Заменить дрон\n", 1)
-errors_text["На плате оптики есть камера"] = (
-                        "- Заменить аккумулятор и включить дрон\n", 1)
-
-#
-#
-# errors_info["GameCore"] = "Нет доступа к ядру"
-# errors_info["Видео"] = "Не подключается видео"
-# errors_info["Страница управления"] = list()
-# errors_info["Сервер"] = list()
-# errors_info["GUI"] = list()
-# errors_info["Дроны"] = list()
+for key in errors_list:
+    print(key, errors_list[key])
