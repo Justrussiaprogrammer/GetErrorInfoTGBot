@@ -29,8 +29,6 @@ def my_reboot(message):
 
     level = 0
     search_error = ""
-    f = open("log.txt", 'w')
-    f.close()
     bot.send_message(message.from_user.id, "Поиск ошибки начат заново", reply_markup=types.ReplyKeyboardRemove())
 
 
@@ -43,7 +41,6 @@ def error_manager(message):
             case 0:
                 if message.text in data.errors_1:
                     # print('fdjkfredf')
-                    print(data.errors_text[message.text])
                     write_text(message, data.errors_text[message.text][0])
                     # print(222)
                     search_error = message.text
