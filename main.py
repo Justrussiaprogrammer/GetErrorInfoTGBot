@@ -1,7 +1,7 @@
+import pandas as pd
 import telebot
 from telebot import types
 import texts
-import pandas as pd
 
 
 bot = telebot.TeleBot(texts.token)
@@ -12,7 +12,7 @@ def my_start(message):
     global users
 
     if users[users["user_id"] == message.chat.id].empty:
-        new_data = pd.DataFrame({"user_id": [message.chat.id], "level": [0], "search_error": [None]})
+        new_data = pd.DataFrame({"user_id": [message.chat.id], "level": [0], "search_error": [0]})
         new_data.to_csv('data.csv', mode='a', header=False, index=False)
         users = pd.read_csv('data.csv')
         print("The end of registration")
@@ -22,7 +22,7 @@ def my_start(message):
 
 @bot.message_handler(commands=['get'])
 def my_get(message):
-    build_keyboard(message, texts.errors_1)
+    build_keyboard(message, texts.errors_list[0])
 
 
 @bot.message_handler(commands=['help'])
@@ -34,7 +34,7 @@ def my_help(message):
 def my_reboot(message):
     global users
 
-    users.loc[users["user_id"] == message.chat.id, "search_error"] = None
+    users.loc[users["user_id"] == message.chat.id, "search_error"] = 0
     users.loc[users["user_id"] == message.chat.id, "level"] = 0
     users.to_csv('data.csv', index=False)
     bot.send_message(message.chat.id, "Поиск ошибки начат заново", reply_markup=types.ReplyKeyboardRemove())
@@ -49,48 +49,20 @@ def error_manager(message):
     level = user["level"].values[0]
     search_error = user["search_error"].values[0]
     try:
-        match level:
-            case 0:
-                if message.text in texts.errors_1:
-                    write_text(message, texts.errors_text[message.text][0])
-
-                    if texts.errors_text[message.text][1] == 0:
-                        level += 1
-                        build_keyboard(message, texts.errors_2[message.text])
-                    else:
-                        level = 0
-                    users.loc[users["user_id"] == message.chat.id, "search_error"] = message.text
-                    users.loc[users["user_id"] == message.chat.id, "level"] = level
-                else:
-                    write_text(message, texts.hack_try)
-            case 1:
-                if message.text in texts.errors_2[search_error]:
-                    write_text(message, texts.errors_text[message.text][0])
-                    if texts.errors_text[message.text][1] == 0:
-                        level += 1
-                        build_keyboard(message, texts.errors_3[message.text])
-                        users.loc[users["user_id"] == message.chat.id, "search_error"] = message.text
-                    else:
-                        users.loc[users["user_id"] == message.chat.id, "search_error"] = None
-                        level = 0
-                    users.loc[users["user_id"] == message.chat.id, "level"] = level
-                else:
-                    print('see here')
-                    write_text(message, texts.hack_try)
-            case 2:
-                if message.text in texts.errors_3[search_error]:
-                    write_text(message, texts.errors_text[message.text][0])
-                    if texts.errors_text[message.text][1] == 0:
-                        level += 1
-                        build_keyboard(message, texts.errors_3[message.text])
-                        users.loc[users["user_id"] == message.chat.id, "search_error"] = message.text
-                    else:
-                        users.loc[users["user_id"] == message.chat.id, "search_error"] = None
-                        level = 0
-                    users.loc[users["user_id"] == message.chat.id, "level"] = level
-                else:
-                    write_text(message, texts.hack_try)
-        users.to_csv('data.csv', index=False)
+        word = texts.name_digit[message.text]
+        if word in texts.errors_list[search_error]:
+            write_text(message, texts.error_text[word])
+            if word in texts.errors_list:
+                level += 1
+                build_keyboard(message, texts.errors_list[word])
+                users.loc[users["user_id"] == message.chat.id, "search_error"] = word
+            else:
+                users.loc[users["user_id"] == message.chat.id, "search_error"] = 0
+                level = 0
+            users.loc[users["user_id"] == message.chat.id, "level"] = level
+            users.to_csv('data.csv', index=False)
+        else:
+            write_text(message, texts.hack_try)
     except Exception:
         bot.reply_to(message, texts.fatal_text)
     print("End of reading function")
@@ -100,7 +72,7 @@ def build_keyboard(message, this_dict):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 
     for key in this_dict:
-        new_btn = types.KeyboardButton(key)
+        new_btn = types.KeyboardButton(texts.digit_name[key])
         markup.add(new_btn)
 
     bot.send_message(message.chat.id, "Надо выбрать что-то из списка:", reply_markup=markup)
