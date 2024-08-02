@@ -48,6 +48,3 @@ digit_name[0] = 0
 errors_list = dict()
 
 DFS(0, data)
-
-for key in errors_list:
-    print(key, errors_list[key])
