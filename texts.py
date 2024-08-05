@@ -16,6 +16,32 @@ def DFS(last, local_dict):
         DFS(key, local_dict[key]["next"])
 
 
+def __reboot():
+    global local_data, ACTION, error_text, data, name_digit, digit_name, errors_list
+
+    f = open('info.json')
+    data = json.load(f)
+    f.close()
+
+    local_data = dict()
+    ACTION = 0
+    error_text = dict()
+    name_digit = dict()
+    name_digit[0] = 0
+    name_digit["Добавить ошибку"] = -2
+    name_digit["Обновить описание"] = -1
+    digit_name = dict()
+    digit_name[0] = 0
+    digit_name[-2] = "Добавить ошибку"
+    digit_name[-1] = "Обновить описание"
+    errors_list = dict()
+
+    DFS(0, data)
+
+
+BASE = 10
+ACTION = 0
+local_data = dict()
 NAME = 'GetErrorInfo'
 TEG = 'GetErrorInfo_bot'
 token = '7198556498:AAFikKiDB8ncUUkWkz4kwAbpEkkzMSw4Ne4'
@@ -39,23 +65,9 @@ hack_try = "Вы вводите что-то не по протоколу, про
 fatal_text = "Программа вышла из чата. Просьба призвать богов ИКТ, они помогут"
 already_error = "В этой категории уже есть такая ошибка, введите название ещё раз"
 
-
-BASE = 10
-
 error_text = dict()
-
-f = open('info.json')
-data = json.load(f)
-f.close()
-
+data = dict()
 name_digit = dict()
-name_digit[0] = 0
-name_digit["Добавить ошибку"] = -2
-name_digit["Обновить описание"] = -1
 digit_name = dict()
-digit_name[0] = 0
-digit_name[-2] = "Добавить ошибку"
-digit_name[-1] = "Обновить описание"
 errors_list = dict()
-
-DFS(0, data)
+__reboot()

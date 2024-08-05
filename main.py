@@ -6,8 +6,6 @@ import texts
 
 
 bot = telebot.TeleBot(texts.token)
-ACTION = 0
-local_data = dict()
 
 
 @bot.message_handler(commands=['start'])
@@ -34,56 +32,37 @@ def my_help(message):
 
 
 @bot.message_handler(commands=['fix'])
-def my_add(message):
-    global ACTION, local_data
-
-    ACTION = 1
-    local_data = texts.data
+def my_fix(message):
+    texts.ACTION = 1
+    texts.local_data = texts.data
     build_keyboard(message, [-2] + texts.errors_list[0], texts.add_text)
 
 
 @bot.message_handler(commands=['reboot'])
 def my_reboot(message):
-    global users, local_data, ACTION
-
-    local_data = dict()
-    ACTION = 0
+    global users
 
     users.loc[users["user_id"] == message.chat.id, "search_error"] = 0
     users.loc[users["user_id"] == message.chat.id, "level"] = 0
     users.to_csv('data.csv', index=False)
     texts.error_text = dict()
 
-    f = open('info.json')
-    data = json.load(f)
-    f.close()
-
-    texts.name_digit = dict()
-    texts.name_digit[0] = 0
-    texts.name_digit["Добавить ошибку"] = -2
-    texts.name_digit["Обновить описание"] = -1
-    texts.digit_name = dict()
-    texts.digit_name[0] = 0
-    texts.digit_name[-2] = "Добавить ошибку"
-    texts.digit_name[-1] = "Обновить описание"
-    texts.errors_list = dict()
-
-    texts.DFS(0, data)
+    texts.__reboot()
     bot.send_message(message.chat.id, "Произведен ребут", reply_markup=types.ReplyKeyboardRemove())
 
 
 @bot.message_handler(content_types=['text'])
 def error_manager(message):
-    global users, local_data, ACTION
+    global users
 
     # print('Start of reading function')
     user = users[users["user_id"] == message.chat.id]
     level = user["level"].values[0]
     search_error = user["search_error"].values[0]
     try:
-        match ACTION:
+        match texts.ACTION:
             case 3:
-                local_data["text"] = message.text
+                texts.local_data["text"] = message.text
                 write_text(message, "Описание ошибки успешно заменено")
                 f = open('info.json', 'w')
                 json.dump(texts.data, f, ensure_ascii=False, indent=2)
@@ -92,15 +71,15 @@ def error_manager(message):
             case 2:
                 if search_error == -2:
                     if level == 0:
-                        local_data[message.text] = {"text": "", "status": 1, "next": {}}
-                        local_data = local_data[message.text]
+                        texts.local_data[message.text] = {"text": "", "status": 1, "next": {}}
+                        texts.local_data = texts.local_data[message.text]
                     else:
-                        local_data["next"][message.text] = {"text": "", "status": 1, "next": {}}
-                        local_data = local_data["next"][message.text]
+                        texts.local_data["next"][message.text] = {"text": "", "status": 1, "next": {}}
+                        texts.local_data = texts.local_data["next"][message.text]
                     write_text(message, texts.instruction_text)
-                    ACTION = 3
+                    texts.ACTION = 3
                 else:
-                    local_data["text"] = message.text
+                    texts.local_data["text"] = message.text
                     write_text(message, "Описание ошибки успешно заменено")
                     f = open('info.json', 'w')
                     json.dump(texts.data, f, ensure_ascii=False, indent=2)
@@ -108,17 +87,15 @@ def error_manager(message):
                     my_reboot(message)
             case 1:
                 word = texts.name_digit[message.text]
-                print(word)
                 if word < 0:
-                    ACTION = 2
+                    texts.ACTION = 2
                     users.loc[users["user_id"] == message.chat.id, "search_error"] = word
                     write_text(message, texts.name_text)
-                    print('all good')
                 elif word in texts.errors_list[search_error]:
                     if level == 0:
-                        local_data = local_data[message.text]
+                        texts.local_data = texts.local_data[message.text]
                     else:
-                        local_data = local_data["next"][message.text]
+                        texts.local_data = texts.local_data["next"][message.text]
                     level += 1
                     users.loc[users["user_id"] == message.chat.id, "level"] = level
                     users.loc[users["user_id"] == message.chat.id, "search_error"] = word
