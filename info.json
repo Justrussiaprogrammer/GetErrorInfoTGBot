@@ -7,11 +7,6 @@
         "text": "- Проверить, запущен ли GameCore.\n- Если запущен, но все равно написано, что нет доступа к ядру, проверьте, что в config.py (из geoscan_arena_control) правильно указан адрес GameCore.\n",
         "status": 1,
         "next": {}
-      },
-      "Tes": {
-        "text": "Pudge",
-        "status": 1,
-        "next": {}
       }
     }
   },

@@ -33,7 +33,7 @@ def my_help(message):
     write_text(message, texts.help_text)
 
 
-@bot.message_handler(commands=['add'])
+@bot.message_handler(commands=['fix'])
 def my_add(message):
     global ACTION, local_data
 
@@ -60,11 +60,11 @@ def my_reboot(message):
 
     texts.name_digit = dict()
     texts.name_digit[0] = 0
-    texts.name_digit["Добавить описание ошибки"] = -2
+    texts.name_digit["Добавить ошибку"] = -2
     texts.name_digit["Обновить описание"] = -1
     texts.digit_name = dict()
     texts.digit_name[0] = 0
-    texts.digit_name[-2] = "Добавить описание ошибки"
+    texts.digit_name[-2] = "Добавить ошибку"
     texts.digit_name[-1] = "Обновить описание"
     texts.errors_list = dict()
 
