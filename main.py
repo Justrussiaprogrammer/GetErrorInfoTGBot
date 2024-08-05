@@ -48,7 +48,7 @@ def my_reboot(message):
     texts.error_text = dict()
 
     texts.__reboot()
-    bot.send_message(message.chat.id, "Произведен ребут", reply_markup=types.ReplyKeyboardRemove())
+    bot.send_message(message.chat.id, texts.reboot_text, reply_markup=types.ReplyKeyboardRemove())
 
 
 @bot.message_handler(content_types=['text'])
@@ -63,7 +63,7 @@ def error_manager(message):
         match texts.ACTION:
             case 3:
                 texts.local_data["text"] = message.text
-                write_text(message, "Описание ошибки успешно заменено")
+                write_text(message, texts.name_text_end)
                 f = open('info.json', 'w')
                 json.dump(texts.data, f, ensure_ascii=False, indent=2)
                 f.close()
@@ -80,7 +80,7 @@ def error_manager(message):
                     texts.ACTION = 3
                 else:
                     texts.local_data["text"] = message.text
-                    write_text(message, "Описание ошибки успешно заменено")
+                    write_text(message, texts.name_text_end)
                     f = open('info.json', 'w')
                     json.dump(texts.data, f, ensure_ascii=False, indent=2)
                     f.close()
@@ -90,7 +90,10 @@ def error_manager(message):
                 if word < 0:
                     texts.ACTION = 2
                     users.loc[users["user_id"] == message.chat.id, "search_error"] = word
-                    write_text(message, texts.name_text)
+                    if word == -2:
+                        write_text(message, texts.name_text)
+                    else:
+                        write_text(message, texts.info_text)
                 elif word in texts.errors_list[search_error]:
                     if level == 0:
                         texts.local_data = texts.local_data[message.text]
