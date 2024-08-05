@@ -13,8 +13,7 @@ def DFS(last, local_dict):
             errors_list[name_digit[last]] = list()
         errors_list[name_digit[last]].append(name_digit[key])
         pos += 1
-        for elem in local_dict[key]["next"]:
-            DFS(key, elem)
+        DFS(key, local_dict[key]["next"])
 
 
 NAME = 'GetErrorInfo'
@@ -29,8 +28,15 @@ help_text = ("Вот список команд бота:\n"
              "/help - выводит это сообщение\n"
              "/start - выводит стартовое сообщение и позволяет получить информацию об ошибках\n"
              "/reboot - обнуляет все процессы, вместе с файлом лога\n")
+add_text = "Выберите вариант ошибки, в категории которой вы хотите поменять текст:"
+name_text = "Напишите название ошибки"
+instruction_text = "Добавлена новая ошибка с пустым описанием. Напишите путь решения проблемы"
+keyboard_text = "Надо выбрать что-то из списка:"
+change_text = "Изменить описание ошибки"
+next_text = "Выбрать подраздел текущей ошибки"
 hack_try = "Вы вводите что-то не по протоколу, просьба повторить попытку в правильном порядке"
 fatal_text = "Программа вышла из чата. Просьба призвать богов ИКТ, они помогут"
+already_error = "В этой категории уже есть такая ошибка, введите название ещё раз"
 
 
 BASE = 10
@@ -43,8 +49,12 @@ f.close()
 
 name_digit = dict()
 name_digit[0] = 0
+name_digit["Добавить ошибку"] = -2
+name_digit["Обновить описание"] = -1
 digit_name = dict()
 digit_name[0] = 0
+digit_name[-2] = "Добавить ошибку"
+digit_name[-1] = "Обновить описание"
 errors_list = dict()
 
 DFS(0, data)
