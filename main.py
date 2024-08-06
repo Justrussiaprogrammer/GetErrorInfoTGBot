@@ -59,7 +59,7 @@ def my_reboot(message):
 
 @bot.message_handler(content_types=['text'])
 def error_manager(message):
-    global users, local_data
+    global users, local_data, conf
 
     user = users[users["user_id"] == message.chat.id]
     level = user["level"].values[0]
@@ -70,26 +70,33 @@ def error_manager(message):
             case 3:
                 local_data["text"] = message.text
                 write_text(message, lines.name_text_end)
-                f = open('info.json', 'w')
-                json.dump(data, f, ensure_ascii=False, indent=2)
-                f.close()
+                fd = open('info.json', 'w')
+                json.dump(data, fd, ensure_ascii=False, indent=2)
+                fd.close()
                 my_reboot(message)
             case 2:
                 if search_error == -2:
                     if level == 0:
                         local_data[message.text] = {"text": "", "status": 1, "next": {}}
+                        if len(local_data) >= conf["base"]:
+                            conf["base"] *= 2
                         local_data = local_data[message.text]
                     else:
                         local_data["next"][message.text] = {"text": "", "status": 1, "next": {}}
+                        if len(local_data["next"]) >= conf["base"]:
+                            conf["base"] *= 2
                         local_data = local_data["next"][message.text]
                     write_text(message, lines.instruction_text)
+                    fd = open('test.yaml', 'w')
+                    yaml.dump(conf, fd)
+                    fd.close()
                     users.loc[users["user_id"] == message.chat.id, "action"] = 3
                 else:
                     local_data["text"] = message.text
                     write_text(message, lines.name_text_end)
-                    f = open('info.json', 'w')
-                    json.dump(data, f, ensure_ascii=False, indent=2)
-                    f.close()
+                    fd = open('info.json', 'w')
+                    json.dump(data, fd, ensure_ascii=False, indent=2)
+                    fd.close()
                     my_reboot(message)
             case 1:
                 word = name_digit[message.text]
@@ -145,14 +152,18 @@ def build_keyboard(message, this_dict, string):
 
 
 def write_text(message, string):
-    f = open("log.txt", 'a')
-    f.write(string + '\n')
-    f.close()
+    fd = open("log.txt", 'a')
+    fd.write(string + '\n')
+    fd.close()
     bot.send_message(message.chat.id, string, reply_markup=types.ReplyKeyboardRemove())
 
 
 if __name__ == '__main__':
     users = pd.read_csv('data.csv')
+    f = open('config.yaml', 'r')
+    conf = yaml.safe_load(f)
+    f.close()
+
     lines = texts.Texts()
     data, local_data, error_text, name_digit, digit_name, errors_list = functions.__reboot()
 
