@@ -26,11 +26,13 @@ def my_start(message):
         connection = sqlite3.connect('database.db')
         cursor = connection.cursor()
         cursor.execute('INSERT INTO Users (user_id, level, search_error, action) VALUES (?, ?, ?, ?)',
-                       (message.chat.id, 0, "0", 0))
+                       (message.chat.id, 0, 0, 0))
         connection.commit()
         connection.close()
+
         print("The end of registration")
     write_text(message, lines.start_text)
+    my_reboot(message)
 
 
 @bot.message_handler(commands=['get'])
@@ -48,6 +50,13 @@ def my_fix(message):
     global local_data
 
     local_data = data
+
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (1, message.chat.id))
+    connection.commit()
+    connection.close()
+
     users.loc[users["user_id"] == message.chat.id, "action"] = 1
     build_keyboard(message, [-2] + errors_list[0], lines.add_text)
 
@@ -55,6 +64,15 @@ def my_fix(message):
 @bot.message_handler(commands=['reboot'])
 def my_reboot(message):
     global data, local_data, error_text, name_digit, digit_name, errors_list
+
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('UPDATE Users SET level = ? WHERE user_id = ?', (0, message.chat.id))
+    cursor.execute('UPDATE Users SET search_error = ? WHERE user_id = ?', (0, message.chat.id))
+    cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (0, message.chat.id))
+    connection.commit()
+    connection.close()
+
     users.loc[users["user_id"] == message.chat.id, "search_error"] = 0
     users.loc[users["user_id"] == message.chat.id, "level"] = 0
     users.loc[users["user_id"] == message.chat.id, "action"] = 0
@@ -73,6 +91,7 @@ def error_manager(message):
     level = user["level"].values[0]
     search_error = user["search_error"].values[0]
     action = user["action"].values[0]
+    print(level, search_error, action)
     try:
         match action:
             case 3:
@@ -98,6 +117,13 @@ def error_manager(message):
                     fd = open('test.yaml', 'w')
                     yaml.dump(conf, fd)
                     fd.close()
+
+                    connection = sqlite3.connect('database.db')
+                    cursor = connection.cursor()
+                    cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (3, message.chat.id))
+                    connection.commit()
+                    connection.close()
+
                     users.loc[users["user_id"] == message.chat.id, "action"] = 3
                 else:
                     local_data["text"] = message.text
@@ -109,6 +135,13 @@ def error_manager(message):
             case 1:
                 word = name_digit[message.text]
                 if word < 0:
+                    connection = sqlite3.connect('database.db')
+                    cursor = connection.cursor()
+                    cursor.execute('UPDATE Users SET search_error = ? WHERE user_id = ?', (word, message.chat.id))
+                    cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (2, message.chat.id))
+                    connection.commit()
+                    connection.close()
+
                     users.loc[users["user_id"] == message.chat.id, "search_error"] = word
                     users.loc[users["user_id"] == message.chat.id, "action"] = 2
                     if word == -2:
@@ -121,6 +154,14 @@ def error_manager(message):
                     else:
                         texts.local_data = local_data["next"][message.text]
                     level += 1
+
+                    connection = sqlite3.connect('database.db')
+                    cursor = connection.cursor()
+                    cursor.execute('UPDATE Users SET level = ? WHERE user_id = ?', (level, message.chat.id))
+                    cursor.execute('UPDATE Users SET search_word = ? WHERE user_id = ?', (word, message.chat.id))
+                    connection.commit()
+                    connection.close()
+
                     users.loc[users["user_id"] == message.chat.id, "level"] = level
                     users.loc[users["user_id"] == message.chat.id, "search_error"] = word
                     if word in errors_list:
@@ -136,11 +177,31 @@ def error_manager(message):
                     if word in errors_list:
                         level += 1
                         build_keyboard(message, errors_list[word], lines.keyboard_text)
+                        print(123456)
+                        connection = sqlite3.connect('database.db')
+                        cursor = connection.cursor()
+                        cursor.execute('UPDATE Users SET search_word = ? WHERE user_id = ?', (word, message.chat.id))
+                        connection.commit()
+                        connection.close()
+                        print('end')
                         users.loc[users["user_id"] == message.chat.id, "search_error"] = word
                     else:
-                        users.loc[users["user_id"] == message.chat.id, "search_error"] = 0
+                        connection = sqlite3.connect('database.db')
+                        cursor = connection.cursor()
+                        cursor.execute('UPDATE Users SET search_word = ? WHERE user_id = ?', ("0", message.chat.id))
+                        connection.commit()
+                        connection.close()
+
+                        users.loc[users["user_id"] == message.chat.id, "search_error"] = "0"
                         level = 0
                         my_get(message)
+
+                    connection = sqlite3.connect('database.db')
+                    cursor = connection.cursor()
+                    cursor.execute('UPDATE Users SET level = ? WHERE user_id = ?', (level, message.chat.id))
+                    connection.commit()
+                    connection.close()
+
                     users.loc[users["user_id"] == message.chat.id, "level"] = level
                 else:
                     write_text(message, lines.hack_try)
