@@ -1,6 +1,7 @@
 import json
 import functions
 import pandas as pd
+import sqlite3
 import telebot
 from telebot import types
 import texts
@@ -21,6 +22,13 @@ def my_start(message):
         new_data = pd.DataFrame({"user_id": [message.chat.id], "level": [0], "search_error": [0]})
         new_data.to_csv('data.csv', mode='a', header=False, index=False)
         users = pd.read_csv('data.csv')
+
+        connection = sqlite3.connect('database.db')
+        cursor = connection.cursor()
+        cursor.execute('INSERT INTO Users (user_id, level, search_error, action) VALUES (?, ?, ?, ?)',
+                       (message.chat.id, 0, "0", 0))
+        connection.commit()
+        connection.close()
         print("The end of registration")
     write_text(message, lines.start_text)
 
