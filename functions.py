@@ -26,7 +26,7 @@ def __reboot():
     local_data = dict()
     error_text = dict()
     name_digit = dict()
-    name_digit[0] = 0
+    name_digit["0"] = 0
     name_digit["Добавить ошибку"] = -2
     name_digit["Обновить описание"] = -1
     digit_name = dict()
@@ -35,6 +35,6 @@ def __reboot():
     digit_name[-1] = "Обновить описание"
     errors_list = dict()
 
-    DFS(0, conf["base"], data, name_digit, digit_name, error_text, errors_list)
+    DFS("0", conf["base"], data, name_digit, digit_name, error_text, errors_list)
 
     return data, local_data, error_text, name_digit, digit_name, errors_list
