@@ -91,7 +91,6 @@ def error_manager(message):
     rank = results[0]
     search_error = int(results[1])
     action = results[2]
-    connection.close()
     try:
         match action:
             case 3:
@@ -118,11 +117,8 @@ def error_manager(message):
                     yaml.dump(conf, fd)
                     fd.close()
 
-                    connection = sqlite3.connect('database.db')
-                    cursor = connection.cursor()
                     cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (3, message.chat.id))
                     connection.commit()
-                    connection.close()
                 else:
                     local_data["text"] = message.text
                     write_text(message, lines.name_text_end)
@@ -133,12 +129,9 @@ def error_manager(message):
             case 1:
                 word = name_digit[message.text]
                 if word < 0:
-                    connection = sqlite3.connect('database.db')
-                    cursor = connection.cursor()
                     cursor.execute('UPDATE Users SET search_error = ? WHERE user_id = ?', (word, message.chat.id))
                     cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (2, message.chat.id))
                     connection.commit()
-                    connection.close()
                     if word == -2:
                         write_text(message, lines.name_text)
                     else:
@@ -150,12 +143,9 @@ def error_manager(message):
                         local_data = local_data["next"][message.text]
                     rank += 1
 
-                    connection = sqlite3.connect('database.db')
-                    cursor = connection.cursor()
                     cursor.execute('UPDATE Users SET level = ? WHERE user_id = ?', (int(rank), message.chat.id))
                     cursor.execute('UPDATE Users SET search_error = ? WHERE user_id = ?', (word, message.chat.id))
                     connection.commit()
-                    connection.close()
                     if word in errors_list:
                         build_keyboard(message, [-2, -1] + errors_list[word], lines.keyboard_text)
                     else:
@@ -170,30 +160,23 @@ def error_manager(message):
                         rank += 1
                         build_keyboard(message, errors_list[word], lines.keyboard_text)
 
-                        connection = sqlite3.connect('database.db')
-                        cursor = connection.cursor()
                         cursor.execute('UPDATE Users SET search_error = ? WHERE user_id = ?', (word, message.chat.id))
                         connection.commit()
-                        connection.close()
                     else:
-                        connection = sqlite3.connect('database.db')
-                        cursor = connection.cursor()
                         cursor.execute('UPDATE Users SET search_error = ? WHERE user_id = ?', (0, message.chat.id))
                         connection.commit()
-                        connection.close()
 
                         rank = 0
                         my_get(message)
 
-                    connection = sqlite3.connect('database.db')
-                    cursor = connection.cursor()
                     cursor.execute('UPDATE Users SET level = ? WHERE user_id = ?', (int(rank), message.chat.id))
                     connection.commit()
-                    connection.close()
                 else:
                     write_text(message, lines.hack_try)
     except Exception:
         bot.reply_to(message, lines.fatal_text)
+    finally:
+        connection.close()
 
 
 def build_keyboard(message, this_dict, string):
