@@ -53,15 +53,18 @@ def my_help(message):
 def my_fix(message):
     global local_data
 
-    local_data = data
+    if message.chat.id in conf["admins"]:
+        local_data = data
 
-    connection = sqlite3.connect('database.db')
-    cursor = connection.cursor()
-    cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (1, message.chat.id))
-    connection.commit()
-    connection.close()
+        connection = sqlite3.connect('database.db')
+        cursor = connection.cursor()
+        cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (1, message.chat.id))
+        connection.commit()
+        connection.close()
 
-    build_keyboard(message, [-2] + errors_list[0], lines.add_text)
+        build_keyboard(message, [-2] + errors_list[0], lines.add_text)
+    else:
+        write_text(message, lines.no_admin_text)
 
 
 @bot.message_handler(commands=['reboot'])
