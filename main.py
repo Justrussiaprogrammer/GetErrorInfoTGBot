@@ -22,16 +22,9 @@ def my_start(message):
     results = cursor.fetchall()
 
     if not results:
-        new_data = pd.DataFrame({"user_id": [message.chat.id], "level": [0], "search_error": [0]})
-        new_data.to_csv('data.csv', mode='a', header=False, index=False)
-
-        connection = sqlite3.connect('database.db')
-        cursor = connection.cursor()
         cursor.execute('INSERT INTO Users (user_id, level, search_error, action) VALUES (?, ?, ?, ?)',
                        (message.chat.id, 0, 0, 0))
         connection.commit()
-        connection.close()
-
         print("The end of registration")
 
     connection.close()
@@ -111,6 +104,7 @@ def error_manager(message):
                     write_text(name_id, "Пришло сообщение от пользователя " + str(message.chat.id) + " с текстом <" +
                                message.text + ">")
                 cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (0, message.chat.id))
+                connection.commit()
             case 3:
                 local_data["text"] = message.text
                 write_text(message.chat.id, lines.name_end_text)
