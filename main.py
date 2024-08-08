@@ -1,6 +1,5 @@
 import json
 import functions
-import pandas as pd
 import sqlite3
 import telebot
 from telebot import types
