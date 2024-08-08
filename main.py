@@ -35,7 +35,7 @@ def my_start(message):
         print("The end of registration")
 
     connection.close()
-    write_text(message, lines.start_text)
+    write_text(message.chat.id, lines.start_text)
     my_reboot(message)
 
 
@@ -46,7 +46,7 @@ def my_get(message):
 
 @bot.message_handler(commands=['help'])
 def my_help(message):
-    write_text(message, lines.help_text)
+    write_text(message.chat.id, lines.help_text)
 
 
 @bot.message_handler(commands=['fix'])
@@ -64,7 +64,17 @@ def my_fix(message):
 
         build_keyboard(message, [-2] + errors_list[0], lines.add_text)
     else:
-        write_text(message, lines.no_admin_text)
+        write_text(message.chat.id, lines.no_admin_text)
+
+
+@bot.message_handler(commands=['offer'])
+def my_offer(message):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (4, message.chat.id))
+    connection.commit()
+    connection.close()
+    write_text(message.chat.id, lines.offer_text)
 
 
 @bot.message_handler(commands=['reboot'])
@@ -80,7 +90,7 @@ def my_reboot(message):
     connection.close()
 
     data, local_data, error_text, name_digit, digit_name, errors_list = functions.__reboot()
-    bot.send_message(message.chat.id, lines.reboot_text, reply_markup=types.ReplyKeyboardRemove())
+    write_text(message.chat.id, lines.reboot_text)
 
 
 @bot.message_handler(content_types=['text'])
@@ -96,9 +106,14 @@ def error_manager(message):
     action = results[2]
     try:
         match action:
+            case 4:
+                for name_id in conf["admins"]:
+                    write_text(name_id, "Пришло сообщение от пользователя " + str(message.chat.id) + " с текстом <" +
+                               message.text + ">")
+                cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (0, message.chat.id))
             case 3:
                 local_data["text"] = message.text
-                write_text(message, lines.name_end_text)
+                write_text(message.chat.id, lines.name_end_text)
                 fd = open('info.json', 'w')
                 json.dump(data, fd, ensure_ascii=False, indent=2)
                 fd.close()
@@ -115,7 +130,7 @@ def error_manager(message):
                         if len(local_data["next"]) >= conf["base"]:
                             conf["base"] *= 2
                         local_data = local_data["next"][message.text]
-                    write_text(message, lines.instruction_text)
+                    write_text(message.chat.id, lines.instruction_text)
                     fd = open('test.yaml', 'w')
                     yaml.dump(conf, fd)
                     fd.close()
@@ -123,7 +138,7 @@ def error_manager(message):
                     connection.commit()
                 else:
                     local_data["text"] = message.text
-                    write_text(message, lines.name_end_text)
+                    write_text(message.chat.id, lines.name_end_text)
                     fd = open('info.json', 'w')
                     json.dump(data, fd, ensure_ascii=False, indent=2)
                     fd.close()
@@ -135,9 +150,9 @@ def error_manager(message):
                     cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (2, message.chat.id))
                     connection.commit()
                     if word == -2:
-                        write_text(message, lines.name_text)
+                        write_text(message.chat.id, lines.name_text)
                     else:
-                        write_text(message, lines.info_text)
+                        write_text(message.chat.id, lines.info_text)
                 elif word in errors_list[search_error]:
                     if rank == 0:
                         local_data = local_data[message.text]
@@ -152,11 +167,11 @@ def error_manager(message):
                     else:
                         build_keyboard(message, [-2, -1], lines.keyboard_text)
                 else:
-                    write_text(message, lines.hack_text)
+                    write_text(message.chat.id, lines.hack_text)
             case 0:
                 word = name_digit[message.text]
                 if word in errors_list[search_error]:
-                    write_text(message, error_text[word])
+                    write_text(message.chat.id, error_text[word])
                     if word in errors_list:
                         rank += 1
                         build_keyboard(message, errors_list[word], lines.keyboard_text)
@@ -171,7 +186,7 @@ def error_manager(message):
                     cursor.execute('UPDATE Users SET level = ? WHERE user_id = ?', (int(rank), message.chat.id))
                     connection.commit()
                 else:
-                    write_text(message, lines.hack_text)
+                    write_text(message.chat.id, lines.hack_text)
     except Exception:
         bot.reply_to(message, lines.fatal_text)
     finally:
@@ -188,11 +203,11 @@ def build_keyboard(message, this_dict, string):
     bot.send_message(message.chat.id, string, reply_markup=markup)
 
 
-def write_text(message, string):
+def write_text(name_id, string):
     fd = open("log.txt", 'a')
     fd.write(string + '\n')
     fd.close()
-    bot.send_message(message.chat.id, string, reply_markup=types.ReplyKeyboardRemove())
+    bot.send_message(name_id, string, reply_markup=types.ReplyKeyboardRemove())
 
 
 if __name__ == '__main__':
