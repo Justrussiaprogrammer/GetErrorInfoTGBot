@@ -100,8 +100,7 @@ def error_manager(message):
         match action:
             case 4:
                 for name_id in conf["admins"]:
-                    write_text(name_id, "Пришло сообщение от пользователя " + str(message.chat.id) + " с текстом <" +
-                               message.text + ">")
+                    write_text(name_id, functions.do_offer_text(message))
                 cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (0, message.chat.id))
                 connection.commit()
             case 3:
@@ -145,6 +144,7 @@ def error_manager(message):
                     if word == -2:
                         write_text(message.chat.id, lines.name_text)
                     else:
+                        write_text(message.chat.id, functions.get_error_text(local_data["text"]))
                         write_text(message.chat.id, lines.info_text)
                 elif word in errors_list[search_error]:
                     if rank == 0:

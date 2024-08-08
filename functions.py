@@ -38,3 +38,11 @@ def __reboot():
     DFS("0", conf["base"], data, name_digit, digit_name, error_text, errors_list)
 
     return data, local_data, error_text, name_digit, digit_name, errors_list
+
+
+def do_offer_text(message):
+    return "Пришло сообщение от пользователя " + str(message.chat.id) + " с текстом <" + message.text + ">\n"
+
+
+def get_error_text(string):
+    return "Текущее описание ошибки: <" + string + ">\n"
