@@ -95,7 +95,7 @@ def error_manager(message):
         match action:
             case 3:
                 local_data["text"] = message.text
-                write_text(message, lines.name_text_end)
+                write_text(message, lines.name_end_text)
                 fd = open('info.json', 'w')
                 json.dump(data, fd, ensure_ascii=False, indent=2)
                 fd.close()
@@ -116,12 +116,11 @@ def error_manager(message):
                     fd = open('test.yaml', 'w')
                     yaml.dump(conf, fd)
                     fd.close()
-
                     cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (3, message.chat.id))
                     connection.commit()
                 else:
                     local_data["text"] = message.text
-                    write_text(message, lines.name_text_end)
+                    write_text(message, lines.name_end_text)
                     fd = open('info.json', 'w')
                     json.dump(data, fd, ensure_ascii=False, indent=2)
                     fd.close()
@@ -142,7 +141,6 @@ def error_manager(message):
                     else:
                         local_data = local_data["next"][message.text]
                     rank += 1
-
                     cursor.execute('UPDATE Users SET level = ? WHERE user_id = ?', (int(rank), message.chat.id))
                     cursor.execute('UPDATE Users SET search_error = ? WHERE user_id = ?', (word, message.chat.id))
                     connection.commit()
@@ -151,7 +149,7 @@ def error_manager(message):
                     else:
                         build_keyboard(message, [-2, -1], lines.keyboard_text)
                 else:
-                    write_text(message, lines.hack_try)
+                    write_text(message, lines.hack_text)
             case 0:
                 word = name_digit[message.text]
                 if word in errors_list[search_error]:
@@ -165,14 +163,12 @@ def error_manager(message):
                     else:
                         cursor.execute('UPDATE Users SET search_error = ? WHERE user_id = ?', (0, message.chat.id))
                         connection.commit()
-
                         rank = 0
                         my_get(message)
-
                     cursor.execute('UPDATE Users SET level = ? WHERE user_id = ?', (int(rank), message.chat.id))
                     connection.commit()
                 else:
-                    write_text(message, lines.hack_try)
+                    write_text(message, lines.hack_text)
     except Exception:
         bot.reply_to(message, lines.fatal_text)
     finally:
