@@ -111,43 +111,25 @@ def error_manager(message):
         search_error = int(results[1])
         action = results[2]
         match action:
-            case 4:
-                for name_id in conf["admins"]:
-                    write_text(name_id, functions.do_offer_text(message))
-                cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (0, message.chat.id))
-                connection.commit()
-            case 3:
-                local_data["text"] = message.text
-                write_text(message.chat.id, lines.name_end_text)
-                fd = open('info.json', 'w')
-                json.dump(data, fd, ensure_ascii=False, indent=2)
-                fd.close()
-                my_reboot(message)
-            case 2:
-                if search_error == -2:
-                    if rank == 0:
-                        local_data[message.text] = {"text": "", "status": 1, "next": {}}
-                        if len(local_data) >= conf["base"]:
-                            conf["base"] *= 2
-                        local_data = local_data[message.text]
+            case 0:
+                word = name_digit[message.text]
+                if word in errors_list[search_error]:
+                    write_text(message.chat.id, error_text[word])
+                    if word in errors_list:
+                        rank += 1
+                        build_keyboard(message, errors_list[word], lines.keyboard_text)
+
+                        cursor.execute('UPDATE Users SET search_error = ? WHERE user_id = ?', (word, message.chat.id))
+                        connection.commit()
                     else:
-                        local_data["next"][message.text] = {"text": "", "status": 1, "next": {}}
-                        if len(local_data["next"]) >= conf["base"]:
-                            conf["base"] *= 2
-                        local_data = local_data["next"][message.text]
-                    write_text(message.chat.id, lines.instruction_text)
-                    fd = open('test.yaml', 'w')
-                    yaml.dump(conf, fd)
-                    fd.close()
-                    cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (3, message.chat.id))
+                        cursor.execute('UPDATE Users SET search_error = ? WHERE user_id = ?', (0, message.chat.id))
+                        connection.commit()
+                        rank = 0
+                        my_get(message)
+                    cursor.execute('UPDATE Users SET level = ? WHERE user_id = ?', (int(rank), message.chat.id))
                     connection.commit()
                 else:
-                    local_data["text"] = message.text
-                    write_text(message.chat.id, lines.name_end_text)
-                    fd = open('info.json', 'w')
-                    json.dump(data, fd, ensure_ascii=False, indent=2)
-                    fd.close()
-                    my_reboot(message)
+                    write_text(message.chat.id, lines.hack_text)
             case 1:
                 word = name_digit[message.text]
                 if word < 0:
@@ -174,25 +156,43 @@ def error_manager(message):
                         build_keyboard(message, [-2, -1], lines.keyboard_text)
                 else:
                     write_text(message.chat.id, lines.hack_text)
-            case 0:
-                word = name_digit[message.text]
-                if word in errors_list[search_error]:
-                    write_text(message.chat.id, error_text[word])
-                    if word in errors_list:
-                        rank += 1
-                        build_keyboard(message, errors_list[word], lines.keyboard_text)
-
-                        cursor.execute('UPDATE Users SET search_error = ? WHERE user_id = ?', (word, message.chat.id))
-                        connection.commit()
+            case 2:
+                if search_error == -2:
+                    if rank == 0:
+                        local_data[message.text] = {"text": "", "status": 1, "next": {}}
+                        if len(local_data) >= conf["base"]:
+                            conf["base"] *= 2
+                        local_data = local_data[message.text]
                     else:
-                        cursor.execute('UPDATE Users SET search_error = ? WHERE user_id = ?', (0, message.chat.id))
-                        connection.commit()
-                        rank = 0
-                        my_get(message)
-                    cursor.execute('UPDATE Users SET level = ? WHERE user_id = ?', (int(rank), message.chat.id))
+                        local_data["next"][message.text] = {"text": "", "status": 1, "next": {}}
+                        if len(local_data["next"]) >= conf["base"]:
+                            conf["base"] *= 2
+                        local_data = local_data["next"][message.text]
+                    write_text(message.chat.id, lines.instruction_text)
+                    fd = open('test.yaml', 'w')
+                    yaml.dump(conf, fd)
+                    fd.close()
+                    cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (3, message.chat.id))
                     connection.commit()
                 else:
-                    write_text(message.chat.id, lines.hack_text)
+                    local_data["text"] = message.text
+                    write_text(message.chat.id, lines.name_end_text)
+                    fd = open('info.json', 'w')
+                    json.dump(data, fd, ensure_ascii=False, indent=2)
+                    fd.close()
+                    my_reboot(message)
+            case 3:
+                local_data["text"] = message.text
+                write_text(message.chat.id, lines.name_end_text)
+                fd = open('info.json', 'w')
+                json.dump(data, fd, ensure_ascii=False, indent=2)
+                fd.close()
+                my_reboot(message)
+            case 4:
+                for name_id in conf["admins"]:
+                    write_text(name_id, functions.do_offer_text(message))
+                cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (0, message.chat.id))
+                connection.commit()
     except IndexError:
         write_text(message.chat.id, lines.index_error_text)
     except Exception:
