@@ -103,13 +103,13 @@ def error_manager(message):
     global conf, local_data
 
     connection = sqlite3.connect('database.db')
-    cursor = connection.cursor()
-    cursor.execute('SELECT level, search_error, action FROM Users WHERE user_id = ?', (message.chat.id,))
-    results = cursor.fetchall()[0]
-    rank = results[0]
-    search_error = int(results[1])
-    action = results[2]
     try:
+        cursor = connection.cursor()
+        cursor.execute('SELECT level, search_error, action FROM Users WHERE user_id = ?', (message.chat.id,))
+        results = cursor.fetchall()[0]
+        rank = results[0]
+        search_error = int(results[1])
+        action = results[2]
         match action:
             case 4:
                 for name_id in conf["admins"]:
@@ -193,8 +193,10 @@ def error_manager(message):
                     connection.commit()
                 else:
                     write_text(message.chat.id, lines.hack_text)
+    except IndexError:
+        write_text(message.chat.id, lines.index_error_text)
     except Exception:
-        bot.reply_to(message, lines.fatal_text)
+        write_text(message.chat.id, lines.fatal_text)
     finally:
         connection.close()
 
