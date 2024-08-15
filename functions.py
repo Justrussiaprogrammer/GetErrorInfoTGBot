@@ -40,6 +40,18 @@ def __reboot():
     return data, local_data, error_text, name_digit, digit_name, errors_list
 
 
+def write_to_file(filename, local_dict, depth):
+    for key in local_dict:
+        fd = open(filename, 'a')
+        fd.write(depth * '\t' + key + '\n')
+        all_lines = local_dict[key]["text"].split('\n')
+        for line in all_lines:
+            if len(line) > 1:
+                fd.write((depth + 1) * '\t' + line + '\n')
+        fd.close()
+        write_to_file(filename, local_dict[key]["next"], depth + 1)
+
+
 def do_offer_text(message):
     return "Пришло сообщение от пользователя " + str(message.chat.id) + " с текстом <" + message.text + ">\n"
 

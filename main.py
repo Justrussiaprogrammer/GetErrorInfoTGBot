@@ -41,6 +41,19 @@ def my_help(message):
     write_text(message.chat.id, lines.help_text)
 
 
+@bot.message_handler(commands=['file'])
+def my_file(message):
+    global data
+
+    fd = open('result.txt', 'w')
+    fd.close()
+    functions.write_to_file('result.txt', data, 0)
+
+    fd_for_out = open("./result.txt", "rb")
+    bot.send_document(message.chat.id, fd_for_out)
+    fd_for_out.close()
+
+
 @bot.message_handler(commands=['fix'])
 def my_fix(message):
     global local_data
