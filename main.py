@@ -13,32 +13,22 @@ f.close()
 bot = telebot.TeleBot(conf["token"])
 
 
-@bot.message_handler(commands=['start'])
-def my_start(message):
-    connection = sqlite3.connect('database.db')
-    cursor = connection.cursor()
-    cursor.execute('SELECT level, search_error, action FROM Users WHERE user_id = ?', (message.chat.id,))
-    results = cursor.fetchall()
+def build_keyboard(message, this_dict, string):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 
-    if not results:
-        cursor.execute('INSERT INTO Users (user_id, level, search_error, action) VALUES (?, ?, ?, ?)',
-                       (message.chat.id, 0, 0, 0))
-        connection.commit()
-        print("The end of registration")
+    for key in this_dict:
+        new_btn = types.KeyboardButton(digit_name[key])
+        markup.add(new_btn)
 
-    connection.close()
-    write_text(message.chat.id, lines.start_text)
-    my_reboot(message)
+    bot.send_message(message.chat.id, string, reply_markup=markup)
 
 
-@bot.message_handler(commands=['get'])
-def my_get(message):
-    build_keyboard(message, errors_list[0], lines.keyboard_text)
-
-
-@bot.message_handler(commands=['help'])
-def my_help(message):
-    write_text(message.chat.id, lines.help_text)
+@bot.message_handler(commands=['answer'])
+def my_answer(message):
+    fd = open('offers.json')
+    data = json.load(fd)
+    fd.close()
+    write_text(message.chat.id, str(data))
 
 
 @bot.message_handler(commands=['file'])
@@ -72,6 +62,19 @@ def my_fix(message):
         write_text(message.chat.id, lines.no_admin_text)
 
 
+@bot.message_handler(commands=['get'])
+def my_get(message):
+    build_keyboard(message, errors_list[0], lines.keyboard_text)
+
+
+@bot.message_handler(commands=['help'])
+def my_help(message):
+    if message.chat.id in conf["admins"]:
+        write_text(message.chat.id, lines.help_admin_text)
+    else:
+        write_text(message.chat.id, lines.help_text)
+
+
 @bot.message_handler(commands=['offer'])
 def my_offer(message):
     connection = sqlite3.connect('database.db')
@@ -80,6 +83,24 @@ def my_offer(message):
     connection.commit()
     connection.close()
     write_text(message.chat.id, lines.offer_text)
+
+
+@bot.message_handler(commands=['start'])
+def my_start(message):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('SELECT level, search_error, action FROM Users WHERE user_id = ?', (message.chat.id,))
+    results = cursor.fetchall()
+
+    if not results:
+        cursor.execute('INSERT INTO Users (user_id, level, search_error, action) VALUES (?, ?, ?, ?)',
+                       (message.chat.id, 0, 0, 0))
+        connection.commit()
+        print("The end of registration")
+
+    connection.close()
+    write_text(message.chat.id, lines.start_text)
+    my_reboot(message)
 
 
 @bot.message_handler(commands=['reboot'])
@@ -96,6 +117,13 @@ def my_reboot(message):
 
     data, local_data, error_text, name_digit, digit_name, errors_list = functions.__reboot()
     write_text(message.chat.id, lines.reboot_text)
+
+
+def write_text(name_id, string):
+    fd = open("log.txt", 'a')
+    fd.write(string + '\n')
+    fd.close()
+    bot.send_message(name_id, string, reply_markup=types.ReplyKeyboardRemove())
 
 
 @bot.message_handler(content_types=['text'])
@@ -193,29 +221,13 @@ def error_manager(message):
                     write_text(name_id, functions.do_offer_text(message))
                 cursor.execute('UPDATE Users SET action = ? WHERE user_id = ?', (0, message.chat.id))
                 connection.commit()
+                write_text(message.chat.id, "Ваше сообщение было доставлено\n")
     except IndexError:
         write_text(message.chat.id, lines.index_error_text)
     except Exception:
         write_text(message.chat.id, lines.fatal_text)
     finally:
         connection.close()
-
-
-def build_keyboard(message, this_dict, string):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-
-    for key in this_dict:
-        new_btn = types.KeyboardButton(digit_name[key])
-        markup.add(new_btn)
-
-    bot.send_message(message.chat.id, string, reply_markup=markup)
-
-
-def write_text(name_id, string):
-    fd = open("log.txt", 'a')
-    fd.write(string + '\n')
-    fd.close()
-    bot.send_message(name_id, string, reply_markup=types.ReplyKeyboardRemove())
 
 
 if __name__ == '__main__':
